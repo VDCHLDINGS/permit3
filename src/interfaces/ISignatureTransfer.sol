@@ -143,4 +143,20 @@ interface ISignatureTransfer is IEIP712 {
         address[] calldata owners,
         bytes[] calldata signatures
     ) external;
+
+    /// @notice Struct representing a pre-used nonce bitmap word for a token owner during deployment or batch import
+    struct NonceBitmapImport {
+        address owner;
+        uint256 wordPos;
+        uint256 mask;
+    }
+
+    /// @notice Batch-invalidate multiple unordered nonce bitmap words for msg.sender in a single transaction
+    function batchInvalidateUnorderedNonces(uint256[] calldata wordPositions, uint256[] calldata masks) external;
+
+    /// @notice Batch-read multiple (owner, wordPos) nonce bitmaps in a single RPC call
+    function batchReadNonceBitmaps(address[] calldata owners, uint256[] calldata wordPositions)
+        external
+        view
+        returns (uint256[] memory bitmaps);
 }

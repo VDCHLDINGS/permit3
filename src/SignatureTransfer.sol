@@ -175,4 +175,46 @@ contract SignatureTransfer is ISignatureTransfer, EIP712 {
             );
         }
     }
+
+    /// @inheritdoc ISignatureTransfer
+    function batchInvalidateUnorderedNonces(uint256[] calldata wordPositions, uint256[] calldata masks) external {
+        uint256 length = wordPositions.length;
+        if (length != masks.length) revert LengthMismatch();
+        unchecked {
+            for (uint256 i = 0; i < length; ++i) {
+                uint256 wordPos = wordPositions[i];
+                uint256 mask = masks[i];
+                nonceBitmap[msg.sender][wordPos] |= mask;
+                emit UnorderedNonceInvalidation(msg.sender, wordPos, mask);
+            }
+        }
+    }
+
+    /// @inheritdoc ISignatureTransfer
+    function batchReadNonceBitmaps(address[] calldata owners, uint256[] calldata wordPositions)
+        external
+        view
+        returns (uint256[] memory bitmaps)
+    {
+        uint256 length = owners.length;
+        if (length != wordPositions.length) revert LengthMismatch();
+        bitmaps = new uint256[](length);
+        unchecked {
+            for (uint256 i = 0; i < length; ++i) {
+                bitmaps[i] = nonceBitmap[owners[i]][wordPositions[i]];
+            }
+        }
+    }
+
+    /// @notice Internal helper to import pre-used nonce bitmaps
+    function _importNonces(NonceBitmapImport[] memory imports) internal {
+        uint256 length = imports.length;
+        unchecked {
+            for (uint256 i = 0; i < length; ++i) {
+                NonceBitmapImport memory entry = imports[i];
+                nonceBitmap[entry.owner][entry.wordPos] |= entry.mask;
+                emit UnorderedNonceInvalidation(entry.owner, entry.wordPos, entry.mask);
+            }
+        }
+    }
 }
